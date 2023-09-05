@@ -15,7 +15,7 @@
 (def ^:private built-in-static-method-names
   [:childContextTypes :contextTypes :contextType
    :getDerivedStateFromProps :getDerivedStateFromError])
-
+;;创建基于React Class的组件
 (defn create-class
   "Creates class based React component"
   [{:keys [constructor getInitialState render
@@ -29,25 +29,25 @@
            defaultProps displayName]
     :as fields}]
   (let [methods (map->js (apply dissoc fields :displayName :getInitialState :constructor :render
-                                built-in-static-method-names))
-        static-methods (map->js (select-keys fields built-in-static-method-names))
-        ctor (fn [props]
+                                built-in-static-method-names));;从fileds中删除所有静态方法
+        static-methods (map->js (select-keys fields built-in-static-method-names));;选出所有的静态方法
+        ctor (fn [props] ;;构建函数
                (this-as this
-                        (.apply react/Component this (js-arguments))
-                        (when constructor
+                        (.apply react/Component this (js-arguments));; 父函数构建
+                        (when constructor ;; 如果存在自己的构建函数，则进行调用，进行构建
                           (constructor this props))
-                        (when getInitialState
+                        (when getInitialState ;;存在初始化函数，将this.state属性设置为函数返回结果
                           (set! (.-state this) (getInitialState this)))
                         this))]
-    (gobj/extend (.-prototype ctor) (.-prototype react/Component) methods)
-    (when render (set! (.-render ^js (.-prototype ctor)) render))
-    (gobj/extend ctor react/Component static-methods)
+    (gobj/extend (.-prototype ctor) (.-prototype react/Component) methods) ;;派生ctor类，extend已经过时了，建议使用assign
+    (when render (set! (.-render ^js (.-prototype ctor)) render));; 如果有render函数，就需要设置ctor.prototype.render为render南山书
+    (gobj/extend ctor react/Component static-methods);; 给ctor添加静态方法
     (when displayName
       (set! (.-displayName ctor) displayName)
       (set! (.-cljs$lang$ctorStr ctor) displayName)
       (set! (.-cljs$lang$ctorPrWriter ctor)
             (fn [this writer opt]
-              (-write writer displayName))))
+              (-write writer displayName)))) ;;如果存在displayname,设置好所有displayname相关的数据
     (set! (.-cljs$lang$type ctor) true)
     (set! (.. ctor -prototype -constructor) ctor)
     (set! (.-uix-component? ctor) true)
