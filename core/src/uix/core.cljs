@@ -40,7 +40,7 @@
                           (set! (.-state this) (getInitialState this)))
                         this))]
     (gobj/extend (.-prototype ctor) (.-prototype react/Component) methods) ;;派生ctor类，extend已经过时了，建议使用assign
-    (when render (set! (.-render ^js (.-prototype ctor)) render));; 如果有render函数，就需要设置ctor.prototype.render为render南山书
+    (when render (set! (.-render ^js (.-prototype ctor)) render));; 如果有render函数，就需要设置ctor.prototype.render为render函数
     (gobj/extend ctor react/Component static-methods);; 给ctor添加静态方法
     (when displayName
       (set! (.-displayName ctor) displayName)
@@ -49,7 +49,7 @@
             (fn [this writer opt]
               (-write writer displayName)))) ;;如果存在displayname,设置好所有displayname相关的数据
     (set! (.-cljs$lang$type ctor) true)
-    (set! (.. ctor -prototype -constructor) ctor)
+    (set! (.. ctor -prototype -constructor) ctor) ;; 将原型的contsructor设置为自己
     (set! (.-uix-component? ctor) true)
     ctor))
 
