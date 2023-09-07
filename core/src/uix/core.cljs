@@ -59,8 +59,8 @@
   (react/createRef))
 
 (defn glue-args [^js props]
-  (cond-> (.-argv props)
-    (.-children props) (assoc :children (.-children props))))
+  (cond-> (.-argv props) 
+    (.-children props) (assoc :children (.-children props))));;存在子组件，就将其放入props.argv?
 
 (defn- memo-compare-args [a b]
   (= (glue-args a) (glue-args b)))

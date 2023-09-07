@@ -11,8 +11,8 @@
             [uix.hooks.alpha :as hooks]))
 
 (def ^:private goog-debug (with-meta 'goog.DEBUG {:tag 'boolean}))
-
-(defn- no-args-component [sym var-sym body]
+;;没有参数的组件
+(defn- no-args-component [sym var-sym body];; 函数名，带命名空间的函数名，函数体
   `(defn ~sym []
      (let [f# (core/fn [] ~@body)]
        (if ~goog-debug
@@ -20,7 +20,7 @@
          (f#)))))
 
 (defn- with-args-component [sym var-sym args body]
-  `(defn ~sym [props#]
+  `(defn ~sym [props#] ;; props#是用来生成随机名称的
      (let [clj-props# (glue-args props#)
            ~args (cljs.core/array clj-props#)
            f# (core/fn [] ~@body)]
@@ -53,7 +53,7 @@
          (f#)))))
 
 (defn parse-sig [form name fdecl]
-  (let [[fdecl m] (if (string? (first fdecl))
+  (let [[fdecl m] (if (string? (first fdecl)) ;;如果form第一个元素是string
                     [(next fdecl) {:doc (first fdecl)}]
                     [fdecl {}])
         [fdecl m] (if (map? (first fdecl))
@@ -65,16 +65,16 @@
         [fdecl m] (if (map? (last fdecl))
                     [(butlast fdecl) (conj m (last fdecl))]
                     [fdecl m])
-        m (conj {:arglists (list 'quote (#'cljs.core/sigs fdecl))} m)
-        m (conj (if (meta name) (meta name) {}) m)]
+        m (conj {:arglists (list 'quote (#'cljs.core/sigs fdecl))} m);;获取参数列表
+        m (conj (if (meta name) (meta name) {}) m)];;获取meta
     (uix.lib/assert!
-     (= 1 (count fdecl))
+     (= 1 (count fdecl));;如果body > 1 说明我们用的是multi-arity，但是当前并不支持
      (str form " doesn't support multi-arity.\n"
           "If you meant to make props an optional argument, you can safely skip it and have a single-arity component.\n
                  It's safe to destructure the props value even if it's `nil`."))
     (let [[args & fdecl] (first fdecl)]
       (uix.lib/assert!
-       (>= 1 (count args))
+       (>= 1 (count args)) ;;args需要大于1
        (str form " is a single argument component taking a map of props, found: " args "\n"
             "If you meant to retrieve `children`, they are under `:children` field in props map."))
       [(with-meta name m) args fdecl])))
@@ -89,17 +89,17 @@
   (let [[fname args fdecl] (parse-sig `defui sym fdecl)]
     (uix.linter/lint! sym fdecl &form &env)
     (if (uix.lib/cljs-env? &env)
-      (let [var-sym (-> (str (-> &env :ns :name) "/" sym) symbol (with-meta {:tag 'js}))
-            body (uix.dev/with-fast-refresh var-sym fdecl)]
+      (let [var-sym (-> (str (-> &env :ns :name) "/" sym) symbol (with-meta {:tag 'js})) ;;创建带有namespace的函数名
+            body (uix.dev/with-fast-refresh var-sym fdecl)];;生成可以进行hot reload的代码
         `(do
-           ~(if (empty? args)
+           ~(if (empty? args) ;;判断参数是否为空
               (no-args-component fname var-sym body)
               (with-args-component fname var-sym args body))
-           (set! (.-uix-component? ~var-sym) true)
-           (set! (.-displayName ~var-sym) ~(str var-sym))
-           ~(uix.dev/fast-refresh-signature var-sym body)))
+           (set! (.-uix-component? ~var-sym) true);;设置对应的函数为uix-component 例如（set! (.-uix-component? 'uix.examples/toolbar))
+           (set! (.-displayName ~var-sym) ~(str var-sym));;设置函数的
+           ~(uix.dev/fast-refresh-signature var-sym body))) ;;为开发环境服务？
       `(defn ~fname ~args
-         ~@fdecl))))
+         ~@fdecl))));;如果是非cljs环境，直接生成函数
 
 (defmacro fn
   "Creates anonymous UIx component. Similar to fn, but doesn't support multi arity.
