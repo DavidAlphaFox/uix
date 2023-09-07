@@ -9,7 +9,7 @@
 
 (defn- choose-value [nv cv]
   (if (and (clojure-primitive? nv) (= nv cv))
-    cv
+    cv;;如果是clojure原生数据值，并且新旧两个值相等，直接返回旧值
     nv))
 
 (defn- use-clojure-primitive-aware-updater
@@ -19,9 +19,9 @@
   (react/useCallback
    (fn [v]
      (updater
-      (fn [cv]
+      (fn [cv];;cv是原始值
         (if (fn? v)
-          (choose-value (v cv) cv)
+          (choose-value (v cv) cv);; v是函数，用函数进行计算
           (choose-value v cv)))))
    #js [updater]))
 
@@ -30,7 +30,7 @@
 (defn use-state [value]
   (let [[state set-state] (r/useState value)
         set-state (use-clojure-primitive-aware-updater set-state)]
-    #js [state set-state]))
+    #js [state set-state]));;封装react的useState,对keyword,symbol和uuid进行额外的比较
 
 (defn- clojure-primitive-aware-reducer-updater
   "Same as `use-clojure-primitive-aware-updater` but for `use-reducer`"

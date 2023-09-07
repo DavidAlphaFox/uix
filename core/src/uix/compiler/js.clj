@@ -1,6 +1,6 @@
 (ns uix.compiler.js
   "Helper functions to convert Clojure literals into JS")
-
+;; 将clojurescript的数据结构转化为js的数据结构
 (defmulti to-js
   (fn [x]
     (cond
